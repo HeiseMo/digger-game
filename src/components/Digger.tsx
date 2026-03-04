@@ -156,17 +156,26 @@ export function Digger() {
     gs.stickAngle -= gs.hydraulicVelocities[2] * 1.2 * delta;
     gs.bucketAngle += gs.hydraulicVelocities[3] * 1.8 * delta;
 
-    // Clamp angles to realistic limits
-    gs.boomAngle = THREE.MathUtils.clamp(gs.boomAngle, -Math.PI / 1.2, Math.PI / 8);
-    gs.stickAngle = THREE.MathUtils.clamp(gs.stickAngle, -Math.PI / 8, Math.PI / 1.2);
-    gs.bucketAngle = THREE.MathUtils.clamp(gs.bucketAngle, -Math.PI / 1.2, Math.PI / 2);
+    // Clamp angles: preserve outward reach, limit only inward folding
+    const boomMinOutward = -2;
+    const boomMaxInward = 0.1;
+    const stickMinOutward = 0.5
+    const stickMaxInward = 2.8;
+    const bucketMinOutward = -Math.PI / 2;
+
+    gs.boomAngle = THREE.MathUtils.clamp(gs.boomAngle, boomMinOutward, boomMaxInward);
+    gs.stickAngle = THREE.MathUtils.clamp(gs.stickAngle, stickMinOutward, stickMaxInward);
+
+    const stickRetraction = THREE.MathUtils.clamp((gs.stickAngle - 0.35) / 1, 0, 1);
+    const boomInward = THREE.MathUtils.clamp((gs.boomAngle + 0.45) / 0.7, 0, 1);
+    const jamRisk = Math.max(stickRetraction, boomInward * 0.85);
+    const bucketMaxInward = THREE.MathUtils.lerp(1.5, -0.2, jamRisk);
+    gs.bucketAngle = THREE.MathUtils.clamp(gs.bucketAngle, bucketMinOutward, bucketMaxInward);
 
     if (cabRef.current) cabRef.current.rotation.y = gs.swing;
     if (boomRef.current) boomRef.current.rotation.x = gs.boomAngle;
     if (stickRef.current) stickRef.current.rotation.x = gs.stickAngle;
     if (bucketRef.current) bucketRef.current.rotation.x = gs.bucketAngle;
-
-    gs.absoluteBucketAngle = gs.boomAngle + gs.stickAngle + gs.bucketAngle;
 
     if (baseRef.current) baseRef.current.updateMatrixWorld(true);
 
@@ -199,11 +208,14 @@ export function Digger() {
         gs.hydraulicVelocities[1] *= 0.5;
       }
       gs.boomAngle += pushUp * 0.2;
+      gs.boomAngle = THREE.MathUtils.clamp(gs.boomAngle, boomMinOutward, boomMaxInward);
       if (boomRef.current) boomRef.current.rotation.x = gs.boomAngle;
       if (baseRef.current) baseRef.current.updateMatrixWorld(true);
       if (bucketTipRef.current) bucketTipRef.current.getWorldPosition(globalBucketPos);
       if (bucketBottomRef.current) bucketBottomRef.current.getWorldPosition(globalBucketBottomPos);
     }
+
+    gs.absoluteBucketAngle = gs.boomAngle + gs.stickAngle + gs.bucketAngle;
 
     // 6. Cockpit look-around (mouse-driven head rotation)
     if (cameraRef.current && !gs.freeFly) {
