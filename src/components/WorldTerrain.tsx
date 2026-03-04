@@ -157,6 +157,143 @@ function Rock({ pos, sx, sy, sz, ry }: { pos: [number, number, number]; sx: numb
   );
 }
 
+// ─── Propeller Plane (low-poly) ─────────────────────────────────────────────
+function PropellerPlane() {
+  const groupRef = useRef<THREE.Group>(null);
+  const propRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+    const t = state.clock.elapsedTime;
+
+    const speed = 0.3;
+    const radius = 160;
+    const a = t * speed;
+
+    // Position on elliptical orbit
+    const x = Math.cos(a) * radius;
+    const z = Math.sin(a) * radius * 0.85;
+    const y = 72 + Math.sin(t * 0.5) * 5;
+    groupRef.current.position.set(x, y, z);
+
+    // Look-ahead point — the plane will face this direction
+    const aheadT = t + 0.06;
+    const aA = aheadT * speed;
+    const ax = Math.cos(aA) * radius;
+    const az = Math.sin(aA) * radius * 0.85;
+    const ay = 72 + Math.sin(aheadT * 0.5) * 5;
+
+    // lookAt makes the group's -Z face the target.
+    // The inner group is rotated 180° Y so the model nose (+Z) becomes -Z → faces forward.
+    groupRef.current.lookAt(ax, ay, az);
+
+    // Bank into turns — compute signed curvature from path derivatives
+    const eps = 0.01;
+    const a1 = (t - eps) * speed;
+    const a2 = (t + eps) * speed;
+    const dx1 = -Math.sin(a1) * radius;
+    const dz1 = Math.cos(a1) * radius * 0.85;
+    const dx2 = -Math.sin(a2) * radius;
+    const dz2 = Math.cos(a2) * radius * 0.85;
+    const len1 = Math.sqrt(dx1 * dx1 + dz1 * dz1);
+    const len2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
+    const crossY = (dx1 / len1) * (dz2 / len2) - (dz1 / len1) * (dx2 / len2);
+    const bankAngle = THREE.MathUtils.clamp(crossY * 80, -0.55, 0.55);
+    groupRef.current.rotateZ(bankAngle);
+
+    // Spin propeller
+    if (propRef.current) {
+      propRef.current.rotation.z += 40 * delta;
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      {/* Inner group: scale only, nose naturally faces lookAt direction */}
+      <group scale={[2.5, 2.5, 2.5]}>
+        {/* Fuselage */}
+        <mesh castShadow>
+          <boxGeometry args={[1.2, 1, 5]} />
+          <meshStandardMaterial color="#2255aa" roughness={0.8} flatShading />
+        </mesh>
+        {/* Nose cone */}
+        <mesh position={[0, 0, 2.8]} castShadow rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.55, 1.2, 6]} />
+          <meshStandardMaterial color="#1a4488" roughness={0.8} flatShading />
+        </mesh>
+        {/* Tail cone */}
+        <mesh position={[0, 0, -2.8]} castShadow rotation={[-Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.45, 1.2, 6]} />
+          <meshStandardMaterial color="#2255aa" roughness={0.8} flatShading />
+        </mesh>
+
+        {/* Wings */}
+        <mesh position={[0, 0.1, 0]} castShadow>
+          <boxGeometry args={[8, 0.15, 1.4]} />
+          <meshStandardMaterial color="#2960b8" roughness={0.8} flatShading />
+        </mesh>
+
+        {/* Tail horizontal stabilizer */}
+        <mesh position={[0, 0.2, -2.8]} castShadow>
+          <boxGeometry args={[3, 0.12, 0.8]} />
+          <meshStandardMaterial color="#2960b8" roughness={0.8} flatShading />
+        </mesh>
+        {/* Tail vertical stabilizer */}
+        <mesh position={[0, 0.8, -2.8]} castShadow>
+          <boxGeometry args={[0.12, 1.4, 0.8]} />
+          <meshStandardMaterial color="#cc2222" roughness={0.8} flatShading />
+        </mesh>
+
+        {/* Cockpit windshield */}
+        <mesh position={[0, 0.6, 0.8]} castShadow>
+          <boxGeometry args={[0.8, 0.5, 0.9]} />
+          <meshStandardMaterial color="#88ccff" roughness={0.3} metalness={0.4} flatShading />
+        </mesh>
+
+        {/* Landing gear struts */}
+        <mesh position={[-0.5, -0.7, 0.5]} castShadow>
+          <cylinderGeometry args={[0.05, 0.05, 0.6, 4]} />
+          <meshStandardMaterial color="#444444" roughness={1} flatShading />
+        </mesh>
+        <mesh position={[0.5, -0.7, 0.5]} castShadow>
+          <cylinderGeometry args={[0.05, 0.05, 0.6, 4]} />
+          <meshStandardMaterial color="#444444" roughness={1} flatShading />
+        </mesh>
+        {/* Wheels */}
+        <mesh position={[-0.5, -1.05, 0.5]} castShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.15, 0.15, 0.1, 6]} />
+          <meshStandardMaterial color="#222222" roughness={1} flatShading />
+        </mesh>
+        <mesh position={[0.5, -1.05, 0.5]} castShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.15, 0.15, 0.1, 6]} />
+          <meshStandardMaterial color="#222222" roughness={1} flatShading />
+        </mesh>
+
+        {/* Propeller hub */}
+        <mesh position={[0, 0, 3.4]}>
+          <sphereGeometry args={[0.2, 5, 4]} />
+          <meshStandardMaterial color="#333333" roughness={0.8} flatShading />
+        </mesh>
+        {/* Propeller blades (spinning) */}
+        <mesh ref={propRef} position={[0, 0, 3.5]}>
+          <boxGeometry args={[2.4, 0.3, 0.05]} />
+          <meshStandardMaterial color="#5a3a1a" roughness={0.9} flatShading />
+        </mesh>
+
+        {/* Wing stripes (red tips) */}
+        <mesh position={[-3.5, 0.15, 0]} castShadow>
+          <boxGeometry args={[1, 0.16, 1.3]} />
+          <meshStandardMaterial color="#cc2222" roughness={0.8} flatShading />
+        </mesh>
+        <mesh position={[3.5, 0.15, 0]} castShadow>
+          <boxGeometry args={[1, 0.16, 1.3]} />
+          <meshStandardMaterial color="#cc2222" roughness={0.8} flatShading />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
 // ─── Hot Air Balloon (low-poly red) ─────────────────────────────────────────
 function HotAirBalloon() {
   const ref = useRef<THREE.Group>(null);
@@ -201,16 +338,6 @@ function HotAirBalloon() {
       <mesh position={[0, 1.5, 0]} castShadow>
         <coneGeometry args={[4, 3.5, 8]} />
         <meshStandardMaterial color="#aa1818" roughness={0.9} flatShading />
-      </mesh>
-
-      {/* White stripe decorations */}
-      <mesh position={[0, 9, 0]} castShadow>
-        <torusGeometry args={[5.6, 0.35, 6, 10]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.9} flatShading />
-      </mesh>
-      <mesh position={[0, 5, 0]} castShadow>
-        <torusGeometry args={[5, 0.3, 6, 10]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.9} flatShading />
       </mesh>
 
       {/* Ropes (4 lines from envelope to basket) */}
@@ -548,6 +675,9 @@ export function WorldTerrain() {
 
       {/* Hot air balloon */}
       <HotAirBalloon />
+
+      {/* Propeller plane */}
+      <PropellerPlane />
     </group>
   );
 }

@@ -241,7 +241,7 @@ export default function App() {
 
       <div className="absolute inset-0 pointer-events-none flex flex-col justify-end z-10">
         {/* Dashboard / Control Panel */}
-        <div className={`pointer-events-auto flex items-center justify-center px-4 ${controlMode === 'kids' ? 'h-56' : 'h-48'}`}>
+        <div className={`pointer-events-auto flex items-center justify-start lg:justify-center px-4 ${controlMode === 'kids' ? 'h-56' : 'h-48'}`}>
 
           {/* Main Controls */}
           {renderControls()}
