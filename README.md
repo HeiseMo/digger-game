@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Digger
 
-# Run and deploy your AI Studio app
+A small, modern browser-based 3D sandbox to dig, build and explore a voxel-like world.
 
-This contains everything you need to run your app locally.
+- Clean, minimal demo using Vite + React + TypeScript
+- Lightweight textures and simple mechanics
 
-View your app in AI Studio: https://ai.studio/apps/ccdc487d-a851-42c3-ba4b-0fc994c9a565
+## Quick Start
 
-## Run Locally
+Install dependencies and run the dev server:
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+npm run dev
+```
 
+Open http://localhost:5173 in your browser.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Features
+
+- Real-time terrain and digging
+- Simple hydraulic and bucket mechanics
+- First-person / free-fly camera controls
+
+## Development
+
+- `npm run build` — create production bundle
+- `npm run preview` — locally preview production build
+
+## Contributing
+
+Contributions and issues are welcome. Create a PR or open an issue on the repo.
+
+## License
+
+MIT — see LICENSE for details.
