@@ -1,0 +1,5 @@
+{
+  "name": "Digger Simulator",
+  "description": "A 2D digger simulator where you control a digger arm with 4 levers to dig and move sand.",
+  "requestFramePermissions": []
+}
